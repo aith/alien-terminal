@@ -21,10 +21,10 @@ io.on("connection", (socket) => {
   });
 
   // This event invokes Listeners from all devices except this one
-  socket.broadcast.emit("requestText");
+  socket.broadcast.emit("requestMessages");
 
-  socket.on("giveText", function (data) {
-    io.sockets.emit("giveText", data);
+  socket.on("giveMessages", function (data) {
+    io.sockets.emit("giveMessages", data);
   });
 
   // socket.on("syncText", function (data) {

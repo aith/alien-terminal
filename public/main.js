@@ -6,86 +6,98 @@ let scale;
 let font = "mono";
 let scaledWidth;
 let scaledHeight;
+let scaledFontSize;
 let input;
 let line1;
 let line2;
+let messages = [];
+let maxMessages = 3;
 
 /*Event-listener for "chat" event. Used by all connected users.*/
 socket.on("chat", (data) => {
   //reset feedback when click send
-  console.log(data.message);
+  pushNewMessage(data.message);
 });
 
 /*Event-listener for when a new connection requests text info*/
-
-socket.on("requestText", (data) => {
-  socket.emit("giveText", {
-    line1: line1,
-    line2: line2,
+socket.on("requestMessages", (data) => {
+  socket.emit("giveMessages", {
+    // Package this user's lines here
+    messages: messages,
   });
-  console.log("giving line1 " + line1);
-  console.log("giving line2 " + line2);
 });
 
-socket.on("giveText", (data) => {
-  //check if lines are filled, then
-  line1 = data.line1;
-  line2 = data.line2;
+socket.on("giveMessages", (data) => {
+  //check if lines are filled, then receive lines here
+  // line1 = data.line1;
+  // line2 = data.line2;
+  // data.lines.forEach((element) => console.log(element));
+  if (messages != undefined) {
+    messages = data.messages;
+    // data.messages.forEach((element) => console.log(element));
+  }
 });
 
-function preload() {
-  // inconsolata = loadFont(font);
-}
+function preload() {}
 
 function setup() {
-  input = createInput("");
-  input.position(200, 200);
-  input.id("localInput");
-  input.changed(submitText); // when the user presses enter
   // input.style("border", "none");
   // input.style("background", "transparent");
   // input.style("opacity", "0.0");
   // input.style("width", "200");
   /// i think i should make the font size based on scale, since i want it to be proportional based on the screen.
-  socket.emit("syncText", {});
-  console.log("giving line1 " + line1);
-  console.log("giving line2 " + line2);
+  socket.emit("requestMessages", {});
 
   // input.input();
   renderTerminal();
 }
 
-function submitText() {
+/* Event-emitter pressing enter in text-input box */
+function submitMessage() {
   socket.emit("chat", {
     message: input.value(), // Store the input box's value as 'message' in the socket
     // handle: handle.value,
   });
-  if (line1 == null) line1 = input.value();
-  else line2 = input.value();
-  console.log("line1 is " + line1);
-  console.log("line2 is " + line2);
-
-  message.value = ""; // r
+  // if (lines[0] == null) lines[0] = input.value();
+  // else lines[1] = input.value();
   input.value(""); // clear input box
+}
+
+function pushNewMessage(message) {
+  messages.unshift(message);
+  messages = messages.slice(0, maxMessages);
+  console.log("Current array:");
+  messages.forEach((element) => console.log(element));
 }
 
 function renderTerminal() {
   scale = calcAspectRatioScale(aspectWidth, aspectHeight);
   scaledWidth = 1600 * scale;
   scaledHeight = 900 * scale;
+  scaledFontSize = 30 * scale;
   canvas = createCanvas(scaledWidth, scaledHeight);
+  canvas.show(); // Removes scroll bar by changing canvas display: block
   background(153);
-  renderLines();
+  renderMessages();
+  renderTextInput();
 }
 
-function renderLines() {
-  textSize(30 * scale);
-  console.log(scale);
-  renderLine();
+function renderMessages() {
+  textSize(scaledFontSize);
+  // console.log(scale);
+  renderMessage();
 }
 
-function renderLine() {
+function renderMessage() {
   text("word", scaledWidth * 0.1, scaledHeight * 0.1); //TODO make the position proportional to canvas
+}
+
+function renderTextInput() {
+  if (input == null) input = createInput("");
+  input.style("font-size", scaledFontSize + "px");
+  input.position(200, 200);
+  input.id("localInput");
+  input.changed(submitMessage); // when the user presses enter
 }
 
 //  https://stackoverflow.com/questions/59604343/how-to-resize-canvas-based-on-window-width-height-and-maintain-aspect-ratio
